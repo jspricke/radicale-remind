@@ -83,7 +83,7 @@ class Collection(icalCollection):
         if 'remind' in self.path:
             return self._remind.to_vobject(self._abs_path(self.path)).serialize().decode('utf-8')
         if 'abook' in self.path:
-            return self._abook.serialize().decode('utf-8')
+            return self._abook.to_vcf().decode('utf-8')
         return ""
 
     @classmethod

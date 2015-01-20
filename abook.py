@@ -68,7 +68,7 @@ class Collection(icalCollection):
     def text(self):
         """Collection as plain text."""
         if 'abook' in self.path:
-            return self._abook.serialize().decode('utf-8')
+            return self._abook.to_vcf().decode('utf-8')
         return ""
 
     @classmethod
