@@ -2,7 +2,7 @@
 
 ## Install
 
-- [Radicale](http://www.roaringpenguin.com/products/remind)
+- [Radicale](http://www.radicale.org)
 - [python-remind](https://github.com/jspricke/python-remind)
 - [python-abook (optional)](https://github.com/jspricke/python-abook)
 - [radicale-storage](https://github.com/jspricke/radicale-storage)
