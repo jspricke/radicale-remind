@@ -4,7 +4,7 @@
 
 - [Radicale](http://www.roaringpenguin.com/products/remind)
 - [python-remind](https://github.com/jspricke/python-remind)
-- python-abook (optional)
+- [python-abook (optional)](https://github.com/jspricke/python-abook)
 - [radicale-storage](https://github.com/jspricke/radicale-storage)
 
 ## Config
