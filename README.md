@@ -1,11 +1,19 @@
-# Radicale storage backends for Remind and Abook
+# Radicale Storage
 
-## Install
+Radicale storage backends for Remind and Abook.
+
+## Dependencies
 
 - [Radicale](http://www.radicale.org)
 - [python-remind](https://github.com/jspricke/python-remind)
 - [python-abook (optional)](https://github.com/jspricke/python-abook)
-- [radicale-storage](https://github.com/jspricke/radicale-storage)
+
+## Installation
+
+Uses python-setuptools:
+```
+python setup.py install
+```
 
 ## Config
 
