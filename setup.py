@@ -13,4 +13,4 @@ setup(name='radicale-storage',
       classifiers=['Programming Language :: Python'],
 
       install_requires=['abook', 'python-dateutil', 'Radicale', 'remind'],
-      py_modules=['remind', 'abook', 'remind_abook'],)
+      py_modules=['remind_storage', 'abook_storage', 'remind_abook'],)
