@@ -37,7 +37,7 @@ class Collection(icalCollection):
     # Manually set timezone name to generate correct ical files
     # (python-vobject tests for the zone attribute)
     _tz.zone = get('storage', 'remind_timezone')
-    _remind = Remind(_tz, expanduser(get('storage', 'remind_file')))
+    _remind = Remind(expanduser(get('storage', 'remind_file')), _tz)
     _abook = Abook(expanduser(get('storage', 'abook_file')))
 
     @staticmethod
