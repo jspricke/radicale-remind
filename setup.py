@@ -10,7 +10,17 @@ setup(name='radicale-storage',
       license='GPLv3+',
       url='https://github.com/jspricke/radicale-storage',
       keywords=['Radicale'],
-      classifiers=['Programming Language :: Python'],
+      classifiers=[
+          'Programming Language :: Python',
+          "Development Status :: 4 - Beta",
+          "Environment :: Console",
+          "Environment :: Web Environment",
+          "Intended Audience :: End Users/Desktop",
+          "Intended Audience :: Information Technology",
+          'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+          "Operating System :: OS Independent",
+          "Topic :: Office/Business :: Groupware"
+          ],
 
       install_requires=['abook', 'python-dateutil', 'Radicale', 'remind'],
       py_modules=['remind_storage', 'abook_storage', 'remind_abook'],)
