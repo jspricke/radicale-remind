@@ -30,6 +30,7 @@ from radicale.config import get
 from remind import Remind
 from time import strftime, gmtime
 
+
 class Collection(icalCollection):
 
     _tz = gettz(get('storage', 'remind_timezone'))

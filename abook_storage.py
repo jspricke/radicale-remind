@@ -29,6 +29,7 @@ from radicale.ical import Collection as icalCollection
 from radicale.config import get
 from time import strftime, gmtime
 
+
 class Collection(icalCollection):
 
     _abook = Abook(expanduser(get('storage', 'abook_file')))
