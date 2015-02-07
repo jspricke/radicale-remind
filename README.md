@@ -10,7 +10,16 @@ Radicale storage backends for Remind and Abook.
 
 ## Installation
 
-Uses python-setuptools:
+### Using pip
+
+```
+pip install radicale-remind
+```
+
+This will install all dependencies as well.
+
+### Using python-setuptools
+
 ```
 python setup.py install
 ```
@@ -35,7 +44,7 @@ type = owner_only
 
 [storage]
 type = custom
-custom_handler = remind_abook_storage
+custom_handler = remind_abook_storage # or remind_storage or abook_storage
 filesystem_folder = /home
 remind_file = /path/to/.reminders
 remind_timezone = Europe/Berlin
@@ -45,7 +54,11 @@ abook_file = /path/to/.abook/addressbook
 debug = False
 full_environment = False
 ```
+Also have a look at the [Radicale documentation](http://radicale.org/user_documentation/).
 
 ## Run
 
-Run Radicale and add hostname:5232 to your CalCAV clients.
+```
+$ radicale
+```
+Add hostname:5232 to your CalCAV clients, like [DAVdroid](https://davdroid.bitfire.at/what-is-davdroid) available in [F-Droid](https://f-droid.org/).
