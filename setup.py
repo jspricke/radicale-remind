@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='radicale-storage',
+setup(name='radicale-remind',
       version='0.1.0',
       description='''
        Radicale Remind and Abook storage backend
@@ -8,7 +8,7 @@ setup(name='radicale-storage',
       author='Jochen Sprickerhof',
       author_email='radicale@jochen.sprickerhof.de',
       license='GPLv3+',
-      url='https://github.com/jspricke/radicale-storage',
+      url='https://github.com/jspricke/radicale-remind',
       keywords=['Radicale'],
       classifiers=[
           'Programming Language :: Python',
@@ -23,4 +23,4 @@ setup(name='radicale-storage',
           ],
 
       install_requires=['abook', 'python-dateutil', 'Radicale', 'remind'],
-      py_modules=['remind_storage', 'abook_storage', 'remind_abook'],)
+      py_modules=['remind_storage', 'abook_storage', 'remind_abook_storage'],)

@@ -1,4 +1,4 @@
-# Radicale Storage
+# Radicale Remind Storage
 
 Radicale storage backends for Remind and Abook.
 
@@ -35,7 +35,7 @@ type = owner_only
 
 [storage]
 type = custom
-custom_handler = remind_abook
+custom_handler = remind_abook_storage
 filesystem_folder = /home
 remind_file = /path/to/.reminders
 remind_timezone = Europe/Berlin
