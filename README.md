@@ -6,6 +6,7 @@ Radicale storage backends for Remind and Abook.
 
 - [Radicale](http://www.radicale.org)
 - [python-remind](https://github.com/jspricke/python-remind)
+- [Remind](http://www.roaringpenguin.com/products/remind)
 - [python-abook (optional)](https://github.com/jspricke/python-abook)
 
 ## Installation
@@ -16,7 +17,13 @@ Radicale storage backends for Remind and Abook.
 pip install radicale-remind
 ```
 
-This will install all dependencies as well.
+This will install all Python dependencies as well.
+You only need to install Remind as well.
+For Debian/Ubuntu you can do it like this:
+
+```
+sudo apt-get install remind
+```
 
 ### Using python-setuptools
 
