@@ -58,7 +58,7 @@ class Collection(icalCollection):
             self._remind.remove(name, self._abs_path(self.path))
 
     def replace(self, name, text):
-        """Replace content by ``text`` in collection objet called ``name``."""
+        """Replace content by ``text`` in collection object called ``name``."""
         if 'remind' in self.path:
             self._remind.replace(name, text, self._abs_path(self.path))
 

@@ -53,7 +53,7 @@ class Collection(icalCollection):
             self._abook.remove(name)
 
     def replace(self, name, text):
-        """Replace content by ``text`` in collection objet called ``name``."""
+        """Replace content by ``text`` in collection object called ``name``."""
         if 'abook' in self.path:
             self._abook.replace(name, text)
 
