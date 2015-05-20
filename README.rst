@@ -24,7 +24,7 @@ Using pip
 
 ::
 
-  $ pip install remind
+  $ pip install radicale-remind
 
 This will install all Python dependencies as well.
 
@@ -34,7 +34,6 @@ Using python-setuptools
 ::
 
   $ python setup.py install
-
 
 
 Config
@@ -78,4 +77,4 @@ Run
 
   $ radicale
 
-Add hostname:5232 to your CalCAV clients, like `DAVdroid <https://davdroid.bitfire.at/what-is-davdroid>`_ available in `F-Droid <https://f-droid.org/>`_.
+Add hostname:5232 to your CalDAV clients, like `DAVdroid <https://davdroid.bitfire.at/what-is-davdroid>`_ available in `F-Droid <https://f-droid.org/>`_.
