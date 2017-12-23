@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='radicale-remind',
       version='0.1.2',
       description='''
-       Radicale Remind and Abook storage backend
+       Radicale Remind, Abook and Taskwarrior storage backend
        ''',
       author='Jochen Sprickerhof',
       author_email='radicale@jochen.sprickerhof.de',
@@ -20,7 +20,7 @@ setup(name='radicale-remind',
           'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
           "Operating System :: OS Independent",
           "Topic :: Office/Business :: Groupware"
-          ],
+      ],
 
-      install_requires=['abook', 'python-dateutil', 'Radicale', 'remind'],
-      py_modules=['remind_storage', 'abook_storage', 'remind_abook_storage'],)
+      install_requires=['abook', 'icstask', 'Radicale', 'remind'],
+      py_modules=['radicale_remind'],)

@@ -1,23 +1,25 @@
 Radicale Remind Storage
 =======================
 
-Radicale storage backends for Remind and Abook.
+Radicale storage backends for Remind, Abook and Taskwarrior.
 
 Dependencies
 ------------
 
-* `Radicale <http://www.radicale.org>`_
+* `Radicale <https://www.radicale.org>`_
 * `python-remind <https://github.com/jspricke/python-remind>`_
-* `Remind <http://www.roaringpenguin.com/products/remind>`_
-* `python-abook (optional) <https://github.com/jspricke/python-abook>`_
+* `Remind <https://www.roaringpenguin.com/products/remind>`_
+* `python-abook <https://github.com/jspricke/python-abook>`_
+* `python-icstask <https://github.com/jspricke/python-icstask>`_
+* `Taskwarrior <https://taskwarrior.org>`_
 
 Installation
 ------------
 
-You need to have the Remind command line tool installed.
+You need to have the Remind and Taskwarrior command line tools installed.
 For Debian/Ubuntu use::
 
-  $ sudo apt-get install remind
+  $ sudo apt-get install remind task
 
 Using pip
 ~~~~~~~~~
@@ -43,7 +45,6 @@ Config
 
   [server]
   hosts = 0.0.0.0:5232
-  daemon = False
   ssl = True
   certificate = /path/to/certificate.crt
   key = /path/to/privateKey.key
@@ -53,22 +54,20 @@ Config
   htpasswd_filename = /path/to/users
   htpasswd_encryption = sha1
   
-  [rights]
-  type = owner_only
-  
   [storage]
-  type = custom
-  custom_handler = remind_abook_storage # or remind_storage or abook_storage
+  type = radicale_remind
   filesystem_folder = /home
   remind_file = /path/to/.reminders
   remind_timezone = Europe/Berlin
   abook_file = /path/to/.abook/addressbook
+  task_folder = /path/to/.task
   
-  [logging]
-  debug = False
-  full_environment = False
+  [web]
+  type = none
 
-Also have a look at the `Radicale documentation <http://radicale.org/user_documentation/>`_.
+Put this into ``~/.config/radicale/config``.
+The ``remind_file``, ``abook_file`` and ``task_folder`` are optional, and can be left out if not used.
+Also have a look at the `Radicale documentation <http://radicale.org/documentation/>`_.
 
 Run
 ---
@@ -77,4 +76,4 @@ Run
 
   $ radicale
 
-Add hostname:5232 to your CalDAV clients, like `DAVdroid <https://davdroid.bitfire.at/what-is-davdroid>`_ available in `F-Droid <https://f-droid.org/>`_.
+Add hostname:5232 to your CalDAV clients, like `DAVdroid <https://www.davdroid.com/>`_ available in `F-Droid <https://f-droid.org/>`_.
