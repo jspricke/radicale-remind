@@ -24,6 +24,7 @@ from icstask import IcsTask
 from os.path import basename, dirname, expanduser, join
 from radicale.storage import BaseCollection, Item, sanitize_path
 from remind import Remind
+from threading import Lock
 from time import gmtime, strftime
 
 
@@ -38,23 +39,6 @@ class Collection(BaseCollection):
     @classmethod
     def discover(cls, path, depth="0"):
         """Discover a list of collections under the given ``path``."""
-        # hack to initialize class variables
-        if not hasattr(cls, 'filesystem_folder'):
-            cls.adapters = []
-            cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
-
-            if cls.configuration.has_option('storage', 'remind_file'):
-                tz = gettz(cls.configuration.get('storage', 'remind_timezone'))
-                # Manually set timezone name to generate correct ical files
-                # (python-vobject tests for the zone attribute)
-                tz.zone = cls.configuration.get('storage', 'remind_timezone')
-                cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz))
-
-            if cls.configuration.has_option('storage', 'abook_file'):
-                cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
-
-            if cls.configuration.has_option('storage', 'task_folder'):
-                cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
 
         if path.count('/') < 3:
             yield cls(path)
@@ -88,10 +72,30 @@ class Collection(BaseCollection):
             yield collection.get(basename(path))
             return
 
+    _lock = Lock()
+
     @classmethod
     @contextmanager
     def acquire_lock(cls, mode, user=None):
         """Set a context manager to lock the whole storage."""
+        # initialize class variables after cls.configuration has been set
+        with cls._lock:
+            if not hasattr(cls, 'filesystem_folder'):
+                cls.adapters = []
+                cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
+
+                if cls.configuration.has_option('storage', 'remind_file'):
+                    tz = gettz(cls.configuration.get('storage', 'remind_timezone'))
+                    # Manually set timezone name to generate correct ical files
+                    # (python-vobject tests for the zone attribute)
+                    tz.zone = cls.configuration.get('storage', 'remind_timezone')
+                    cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz))
+
+                if cls.configuration.has_option('storage', 'abook_file'):
+                    cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
+
+                if cls.configuration.has_option('storage', 'task_folder'):
+                    cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
         yield
 
     def list(self):
