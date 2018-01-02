@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='radicale-remind',
-      version='0.1.2',
+      version='0.2.0',
       description='''
        Radicale Remind, Abook and Taskwarrior storage backend
        ''',
