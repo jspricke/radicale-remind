@@ -100,6 +100,9 @@ class Collection(BaseCollection):
 
     def list(self):
         """List collection items."""
+        if not self.adapter:
+            self.logger.warning("No adapter for collection: %r, please provide a full path", self.path)
+            return
         for uid in self.adapter.get_uids(self.filename):
             yield uid
 
