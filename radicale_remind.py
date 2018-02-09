@@ -21,7 +21,7 @@ from colorsys import hsv_to_rgb
 from contextlib import contextmanager
 from dateutil.tz import gettz
 from icstask import IcsTask
-from os.path import basename, dirname, expanduser, join
+from os.path import basename, dirname, expanduser, join, normpath
 from radicale.storage import BaseCollection, Item, sanitize_path
 from remind import Remind
 from threading import Lock
@@ -35,6 +35,7 @@ class Collection(BaseCollection):
         self.path = sanitize_path(path).strip('/')
         self.filename = filename
         self.adapter = adapter
+        self._proj = None if normpath(self.adapter._root) == normpath(filename) else self.filename
 
     @classmethod
     def discover(cls, path, depth="0"):
@@ -45,7 +46,7 @@ class Collection(BaseCollection):
 
             if depth != '0':
                 for adapter in cls.adapters:
-                    for filename in adapter.get_filesnames():
+                    for filename in adapter.get_filesnames() + [adapter._root]:
                         yield cls(filename.replace(cls.filesystem_folder, ''), filename, adapter)
             return
 
@@ -53,7 +54,7 @@ class Collection(BaseCollection):
         collection = None
 
         for adapter in cls.adapters:
-            if filename in adapter.get_filesnames():
+            if filename in adapter.get_filesnames() + [adapter._root]:
                 collection = cls(path, filename, adapter)
                 break
 
@@ -90,12 +91,15 @@ class Collection(BaseCollection):
                     # (python-vobject tests for the zone attribute)
                     tz.zone = cls.configuration.get('storage', 'remind_timezone')
                     cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz))
+                    cls.adapters[-1]._root = ''
 
                 if cls.configuration.has_option('storage', 'abook_file'):
                     cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
+                    cls.adapters[-1]._root = ''
 
                 if cls.configuration.has_option('storage', 'task_folder'):
                     cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
+                    cls.adapters[-1]._root = cls.configuration.get('storage', 'task_folder')
         yield
 
     def list(self):
@@ -103,28 +107,28 @@ class Collection(BaseCollection):
         if not self.adapter:
             self.logger.warning("No adapter for collection: %r, please provide a full path", self.path)
             return
-        for uid in self.adapter.get_uids(self.filename):
+        for uid in self.adapter.get_uids(self._proj):
             yield uid
 
     def get(self, href):
         """Fetch a single item."""
-        item = self.adapter.to_vobject(self.filename, href)
+        item = self.adapter.to_vobject(self._proj, href)
         return Item(self, item, href=href, etag=f'"{href}"', last_modified=self.last_modified)
 
     def upload(self, href, vobject_item):
         """Upload a new or replace an existing item."""
-        if href in self.adapter.get_uids(self.filename):
-            uid = self.adapter.replace_vobject(href, vobject_item, self.filename)
+        if href in self.adapter.get_uids(self._proj):
+            uid = self.adapter.replace_vobject(href, vobject_item, self._proj)
         else:
-            uid = self.adapter.append_vobject(vobject_item, self.filename)
+            uid = self.adapter.append_vobject(vobject_item, self._proj)
         return self.get(uid)
 
     def delete(self, href=None):
         """Delete an item."""
-        self.adapter.remove(href, self.filename)
+        self.adapter.remove(href, self._proj)
 
     def _get_color(self):
-        files = self.adapter.get_filesnames()
+        files = self.adapter.get_filesnames() + [self.adapter._root]
         index = files.index(self.filename)
         rgb = hsv_to_rgb((index / len(files) + 1 / 3) % 1.0, 0.5, 1.0)
         r, g, b = (int(255 * x) for x in rgb)
