@@ -109,7 +109,7 @@ class Collection(BaseCollection):
     def get(self, href):
         """Fetch a single item."""
         item = self.adapter.to_vobject(self.filename, href)
-        etag = f'"{href}"' if hasattr(self.adapter, 'href_is_etag') else None
+        etag = self.adapter.get_etag(item) if hasattr(self.adapter, 'get_etag') else None
         return Item(self, item, href=href, etag=etag, last_modified=self.last_modified)
 
     def upload(self, href, vobject_item):
