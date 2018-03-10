@@ -89,7 +89,8 @@ class Collection(BaseCollection):
                     # Manually set timezone name to generate correct ical files
                     # (python-vobject tests for the zone attribute)
                     tz.zone = cls.configuration.get('storage', 'remind_timezone')
-                    cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz))
+                    month = cls.configuration.getint('storage', 'remind_lookahead_month', fallback=15)
+                    cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz, month=month))
 
                 if cls.configuration.has_option('storage', 'abook_file'):
                     cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
@@ -118,7 +119,10 @@ class Collection(BaseCollection):
             uid = self.adapter.replace_vobject(href, vobject_item, self.filename)
         else:
             uid = self.adapter.append_vobject(vobject_item, self.filename)
-        return self.get(uid)
+        try:
+            return self.get(uid)
+        except KeyError:
+            self.logger.warning("Unable to find uploaded event, maybe increase remind_lookahead_month")
 
     def delete(self, href=None):
         """Delete an item."""
