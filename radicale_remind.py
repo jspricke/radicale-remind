@@ -109,9 +109,8 @@ class Collection(BaseCollection):
 
     def get(self, href):
         """Fetch a single item."""
-        item = self.adapter.to_vobject(self.filename, href)
-        etag = self.adapter.get_etag(item) if hasattr(self.adapter, 'get_etag') else None
-        return Item(self, item, href=href, etag=etag, last_modified=self.last_modified)
+        item, etag = self.adapter.to_vobject_etag(self.filename, href) if hasattr(self.adapter, 'to_vobject_etag') else (self.adapter.to_vobject(self.filename, href), None)
+        return Item(self, item, href=href, etag=f'"{etag}"', last_modified=self.last_modified)
 
     def upload(self, href, vobject_item):
         """Upload a new or replace an existing item."""
