@@ -19,9 +19,9 @@
 from abook import Abook
 from colorsys import hsv_to_rgb
 from contextlib import contextmanager
-from dateutil.tz import gettz
 from icstask import IcsTask
 from os.path import basename, dirname, expanduser, join
+from pytz import timezone
 from radicale.storage import BaseCollection, Item, sanitize_path
 from remind import Remind
 from threading import Lock
@@ -85,10 +85,9 @@ class Collection(BaseCollection):
                 cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
 
                 if cls.configuration.has_option('storage', 'remind_file'):
-                    tz = gettz(cls.configuration.get('storage', 'remind_timezone'))
-                    # Manually set timezone name to generate correct ical files
-                    # (python-vobject tests for the zone attribute)
-                    tz.zone = cls.configuration.get('storage', 'remind_timezone')
+                    tz = None
+                    if cls.configuration.has_option('storage', 'remind_timezone'):
+                        tz = timezone(cls.configuration.get('storage', 'remind_timezone'))
                     month = cls.configuration.getint('storage', 'remind_lookahead_month', fallback=15)
                     cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz, month=month))
 

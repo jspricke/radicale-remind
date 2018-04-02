@@ -58,7 +58,6 @@ Config
   type = radicale_remind
   filesystem_folder = /home
   remind_file = /path/to/.reminders
-  remind_timezone = Europe/Berlin
   abook_file = /path/to/.abook/addressbook
   task_folder = /path/to/.task
   
