@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Remind, Abook, Taskwarrior Storage backend for Radicale"""
 
 from abook import Abook
@@ -108,7 +108,7 @@ class Collection(BaseCollection):
 
     def get(self, href):
         """Fetch a single item."""
-        item, etag = self.adapter.to_vobject_etag(self.filename, href) if hasattr(self.adapter, 'to_vobject_etag') else (self.adapter.to_vobject(self.filename, href), None)
+        item, etag = self.adapter.to_vobject_etag(self.filename, href)
         return Item(self, item, href=href, etag=etag, last_modified=self.last_modified)
 
     def upload(self, href, vobject_item):

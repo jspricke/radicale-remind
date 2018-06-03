@@ -66,7 +66,7 @@ Config
 
 Put this into ``~/.config/radicale/config``.
 The ``remind_file``, ``abook_file`` and ``task_folder`` are optional, and can be left out if not used.
-Also have a look at the `Radicale documentation <http://radicale.org/documentation/>`_.
+Also have a look at the `Radicale documentation <https://radicale.org/documentation/>`_.
 
 Run
 ---
