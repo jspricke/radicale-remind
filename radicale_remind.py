@@ -22,9 +22,10 @@ from contextlib import contextmanager
 from icstask import IcsTask
 from os.path import basename, dirname, expanduser, join
 from pytz import timezone
-from radicale.storage import BaseCollection, Item, sanitize_path
+from radicale.item import Item
+from radicale.pathutils import sanitize_path
+from radicale.storage import BaseCollection
 from remind import Remind
-from threading import Lock
 from time import gmtime, strftime
 
 
@@ -35,6 +36,25 @@ class Collection(BaseCollection):
         self.path = sanitize_path(path).strip('/')
         self.filename = filename
         self.adapter = adapter
+
+    @classmethod
+    def static_init(cls):
+        """init collection copy"""
+        cls.adapters = []
+        cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
+
+        if cls.configuration.has_option('storage', 'remind_file'):
+            tz = None
+            if cls.configuration.has_option('storage', 'remind_timezone'):
+                tz = timezone(cls.configuration.get('storage', 'remind_timezone'))
+            month = cls.configuration.getint('storage', 'remind_lookahead_month', fallback=15)
+            cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz, month=month))
+
+        if cls.configuration.has_option('storage', 'abook_file'):
+            cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
+
+        if cls.configuration.has_option('storage', 'task_folder'):
+            cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
 
     @classmethod
     def discover(cls, path, depth="0"):
@@ -64,41 +84,48 @@ class Collection(BaseCollection):
             yield collection
 
             if depth != '0':
-                for uid in collection.list():
-                    yield collection.get(uid)
+                for uid in collection._list():
+                    yield collection._get(uid)
             return
 
-        if basename(path) in collection.list():
-            yield collection.get(basename(path))
+        if basename(path) in collection._list():
+            yield collection._get(basename(path))
             return
-
-    _lock = Lock()
 
     @classmethod
-    @contextmanager
-    def acquire_lock(cls, mode, user=None):
-        """Set a context manager to lock the whole storage."""
-        # initialize class variables after cls.configuration has been set
-        with cls._lock:
-            if not hasattr(cls, 'filesystem_folder'):
-                cls.adapters = []
-                cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
+    def move(cls, item, to_collection, to_href):
+        """Move an object.
 
-                if cls.configuration.has_option('storage', 'remind_file'):
-                    tz = None
-                    if cls.configuration.has_option('storage', 'remind_timezone'):
-                        tz = timezone(cls.configuration.get('storage', 'remind_timezone'))
-                    month = cls.configuration.getint('storage', 'remind_lookahead_month', fallback=15)
-                    cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz, month=month))
+        ``item`` is the item to move.
 
-                if cls.configuration.has_option('storage', 'abook_file'):
-                    cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
+        ``to_collection`` is the target collection.
 
-                if cls.configuration.has_option('storage', 'task_folder'):
-                    cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
-        yield
+        ``to_href`` is the target name in ``to_collection``. An item with the
+        same name might already exist.
 
-    def list(self):
+        """
+        if item.collection.path == to_collection.path and item.href == to_href:
+            return
+
+        to_collection.adapter.move_vobject(to_href, item.collection.filename, to_collection.filename)
+
+    def get_multi(self, hrefs):
+        """Fetch multiple items.
+
+        It's not required to return the requested items in the correct order.
+        Duplicated hrefs can be ignored.
+
+        Returns tuples with the href and the item or None if the item doesn't
+        exist.
+
+        """
+        return ((x[0], self._convert(x)) for x in self.adapter.to_vobjects(self.filename, hrefs))
+
+    def get_all(self):
+        """Fetch all items."""
+        return (self._convert(x) for x in self.adapter.to_vobjects(self.filename))
+
+    def _list(self):
         """List collection items."""
         if not self.adapter:
             self.logger.warning("No adapter for collection: %r, please provide a full path", self.path)
@@ -106,19 +133,23 @@ class Collection(BaseCollection):
         for uid in self.adapter.get_uids(self.filename):
             yield uid
 
-    def get(self, href):
+    def _convert(self, elem):
+        """Fetch a single item."""
+        return Item(collection=self, vobject_item=elem[1], href=elem[0], last_modified=self.last_modified, etag=elem[2])
+
+    def _get(self, href):
         """Fetch a single item."""
         item, etag = self.adapter.to_vobject_etag(self.filename, href)
-        return Item(self, item, href=href, etag=etag, last_modified=self.last_modified)
+        return self._convert((href, item, etag))
 
-    def upload(self, href, vobject_item):
+    def upload(self, href, item):
         """Upload a new or replace an existing item."""
         if href in self.adapter.get_uids(self.filename):
-            uid = self.adapter.replace_vobject(href, vobject_item, self.filename)
+            uid = self.adapter.replace_vobject(href, item.vobject_item, self.filename)
         else:
-            uid = self.adapter.append_vobject(vobject_item, self.filename)
+            uid = self.adapter.append_vobject(item.vobject_item, self.filename)
         try:
-            return self.get(uid)
+            return self._get(uid)
         except KeyError:
             self.logger.warning("Unable to find uploaded event, maybe increase remind_lookahead_month")
 
@@ -147,3 +178,9 @@ class Collection(BaseCollection):
     def last_modified(self):
         """Get the HTTP-datetime of when the collection was modified."""
         return strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime(self.adapter.last_modified()))
+
+    @classmethod
+    @contextmanager
+    def acquire_lock(cls, mode, user=None):
+        """Set a context manager to lock the whole storage."""
+        yield
