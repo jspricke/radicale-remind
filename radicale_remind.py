@@ -54,7 +54,10 @@ class Collection(BaseCollection):
             cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
 
         if cls.configuration.has_option('storage', 'task_folder'):
-            cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder')))
+            task_projects = []
+            if cls.configuration.has_option('storage', 'task_projects'):
+                task_projects = cls.configuration.get('storage', 'task_projects').split(',')
+            cls.adapters.append(IcsTask(cls.configuration.get('storage', 'task_folder'), task_projects=task_projects))
 
     @classmethod
     def discover(cls, path, depth="0"):
