@@ -162,7 +162,7 @@ class Collection(BaseCollection):
         index = files.index(self.filename)
         rgb = hsv_to_rgb((index / len(files) + 1 / 3) % 1.0, 0.5, 1.0)
         r, g, b = (int(255 * x) for x in rgb)
-        return f'#{r:02x}{g:02x}{b:02x}'
+        return '#{r:02x}{g:02x}{b:02x}'.format(**locals())
 
     def get_meta(self, key=None):
         """Get metadata value for collection."""
