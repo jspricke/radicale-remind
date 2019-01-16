@@ -8,7 +8,7 @@ Dependencies
 
 * `Radicale <https://radicale.org>`_
 * `python-remind <https://github.com/jspricke/python-remind>`_
-* `Remind <https://www.roaringpenguin.com/products/remind>`_
+* `Remind <https://dianne.skoll.ca/projects/remind/>`_
 * `python-abook <https://github.com/jspricke/python-abook>`_
 * `python-icstask <https://github.com/jspricke/python-icstask>`_
 * `Taskwarrior <https://taskwarrior.org>`_
