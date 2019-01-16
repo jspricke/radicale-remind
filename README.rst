@@ -19,7 +19,7 @@ Installation
 You need to have the Remind and Taskwarrior command line tools installed.
 For Debian/Ubuntu use::
 
-  $ sudo apt-get install remind task
+  $ sudo apt-get install remind taskwarrior
 
 Using pip
 ~~~~~~~~~
