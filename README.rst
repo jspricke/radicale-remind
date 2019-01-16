@@ -6,7 +6,7 @@ Radicale storage backends for Remind, Abook and Taskwarrior.
 Dependencies
 ------------
 
-* `Radicale <https://www.radicale.org>`_
+* `Radicale <https://radicale.org>`_
 * `python-remind <https://github.com/jspricke/python-remind>`_
 * `Remind <https://www.roaringpenguin.com/products/remind>`_
 * `python-abook <https://github.com/jspricke/python-abook>`_
