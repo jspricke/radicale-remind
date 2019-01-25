@@ -23,6 +23,7 @@ from icstask import IcsTask
 from os.path import basename, dirname, expanduser, join
 from pytz import timezone
 from radicale.item import Item
+from radicale.log import logger
 from radicale.pathutils import sanitize_path
 from radicale.storage import BaseCollection
 from remind import Remind
@@ -131,7 +132,7 @@ class Collection(BaseCollection):
     def _list(self):
         """List collection items."""
         if not self.adapter:
-            self.logger.warning("No adapter for collection: %r, please provide a full path", self.path)
+            logger.warning("No adapter for collection: %r, please provide a full path", self.path)
             return
         for uid in self.adapter.get_uids(self.filename):
             yield uid
@@ -154,7 +155,7 @@ class Collection(BaseCollection):
         try:
             return self._get(uid)
         except KeyError:
-            self.logger.warning("Unable to find uploaded event, maybe increase remind_lookahead_month")
+            logger.warning("Unable to find uploaded event, maybe increase remind_lookahead_month")
 
     def delete(self, href=None):
         """Delete an item."""
