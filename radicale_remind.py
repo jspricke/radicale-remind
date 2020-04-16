@@ -25,7 +25,7 @@ from pytz import timezone
 from radicale.item import Item
 from radicale.log import logger
 from radicale.pathutils import sanitize_path
-from radicale.storage import BaseCollection
+from radicale.storage import BaseCollection, BaseStorage
 from remind import Remind
 from time import gmtime, strftime
 
@@ -34,86 +34,29 @@ class Collection(BaseCollection):
     """Collection stored in adapters for Remind, Abook, Taskwarrior"""
 
     def __init__(self, path, filename=None, adapter=None):
-        self.path = sanitize_path(path).strip('/')
+        self._path = sanitize_path(path).strip('/')
         self.filename = filename
         self.adapter = adapter
 
-    @classmethod
-    def static_init(cls):
-        """init collection copy"""
-        cls.adapters = []
-        cls.filesystem_folder = expanduser(cls.configuration.get('storage', 'filesystem_folder'))
+    @property
+    def path(self):
+        """The sanitized path of the collection without leading or
+        trailing ``/``."""
+        return self._path
 
-        if cls.configuration.has_option('storage', 'remind_file'):
-            tz = None
-            if cls.configuration.has_option('storage', 'remind_timezone'):
-                tz = timezone(cls.configuration.get('storage', 'remind_timezone'))
-            month = cls.configuration.getint('storage', 'remind_lookahead_month', fallback=15)
-            cls.adapters.append(Remind(cls.configuration.get('storage', 'remind_file'), tz, month=month))
+    def sync(self, old_token=None):
+        """Get the current sync token and changed items for synchronization.
 
-        if cls.configuration.has_option('storage', 'abook_file'):
-            cls.adapters.append(Abook(cls.configuration.get('storage', 'abook_file')))
+        ``old_token`` an old sync token which is used as the base of the
+        delta update. If sync token is missing, all items are returned.
+        ValueError is raised for invalid or old tokens.
 
-        if cls.configuration.has_option('storage', 'task_folder'):
-            task_folder = cls.configuration.get('storage', 'task_folder')
-            task_projects = []
-            if cls.configuration.has_option('storage', 'task_projects'):
-                task_projects = cls.configuration.get('storage', 'task_projects').split(',')
-            task_start = cls.configuration.get('storage', 'task_start', fallback=True)
-            cls.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
-
-    @classmethod
-    def discover(cls, path, depth="0"):
-        """Discover a list of collections under the given ``path``."""
-
-        if path.count('/') < 3:
-            yield cls(path)
-
-            if depth != '0':
-                for adapter in cls.adapters:
-                    for filename in adapter.get_filesnames():
-                        yield cls(filename.replace(cls.filesystem_folder, ''), filename, adapter)
-            return
-
-        filename = join(cls.filesystem_folder, dirname(path).strip('/'))
-        collection = None
-
-        for adapter in cls.adapters:
-            if filename in adapter.get_filesnames():
-                collection = cls(path, filename, adapter)
-                break
-
-        if not collection:
-            return
-
-        if path.endswith('/'):
-            yield collection
-
-            if depth != '0':
-                for uid in collection._list():
-                    yield collection._get(uid)
-            return
-
-        if basename(path) in collection._list():
-            yield collection._get(basename(path))
-            return
-
-    @classmethod
-    def move(cls, item, to_collection, to_href):
-        """Move an object.
-
-        ``item`` is the item to move.
-
-        ``to_collection`` is the target collection.
-
-        ``to_href`` is the target name in ``to_collection``. An item with the
-        same name might already exist.
+        WARNING: This simple default implementation treats all sync-token as
+                 invalid.
 
         """
-        if item.collection.path == to_collection.path and item.href == to_href:
-            return
-
-        to_collection.adapter.move_vobject(to_href, item.collection.filename, to_collection.filename)
+        token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
+        return token, (item.href for item in self.get_all())
 
     def get_multi(self, hrefs):
         """Fetch multiple items.
@@ -147,6 +90,10 @@ class Collection(BaseCollection):
         """Fetch a single item."""
         item, etag = self.adapter.to_vobject_etag(self.filename, href)
         return self._convert((href, item, etag))
+
+    def has_uid(self, uid):
+        """Check if a UID exists in the collection."""
+        return uid in self.adapter.get_uids()
 
     def upload(self, href, item):
         """Upload a new or replace an existing item."""
@@ -185,8 +132,133 @@ class Collection(BaseCollection):
         """Get the HTTP-datetime of when the collection was modified."""
         return strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime(self.adapter.last_modified()))
 
-    @classmethod
+
+class Storage(BaseStorage):
+    def __init__(self, configuration):
+        """Initialize BaseStorage.
+
+        ``configuration`` see ``radicale.config`` module.
+        The ``configuration`` must not change during the lifetime of
+        this object, it is kept as an internal reference.
+
+        """
+        self.adapters = []
+        self.filesystem_folder = expanduser(configuration.get('storage', 'filesystem_folder'))
+
+        if 'remind_file' in configuration.options('storage'):
+            tz = None
+            if 'remind_timezone' in configuration.options('storage'):
+                tz = timezone(configuration.get('storage', 'remind_timezone'))
+            month = configuration.get('storage', 'remind_lookahead_month') or 15
+            self.adapters.append(Remind(configuration.get('storage', 'remind_file'), tz, month=month))
+
+        if 'abook_file' in configuration.options('storage'):
+            self.adapters.append(Abook(configuration.get('storage', 'abook_file')))
+
+        if 'task_folder' in configuration.options('storage'):
+            task_folder = configuration.get('storage', 'task_folder')
+            task_projects = []
+            if 'task_projects' in configuration.options('storage'):
+                task_projects = configuration.get('storage', 'task_projects').split(',')
+            task_start = configuration.get('storage', 'task_start') or True
+            self.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
+
+    def discover(self, path, depth="0"):
+        """Discover a list of collections under the given ``path``.
+
+        ``path`` is sanitized.
+
+        If ``depth`` is "0", only the actual object under ``path`` is
+        returned.
+
+        If ``depth`` is anything but "0", it is considered as "1" and direct
+        children are included in the result.
+
+        The root collection "/" must always exist.
+
+        """
+        """Discover a list of collections under the given ``path``."""
+
+        if path.count('/') < 3:
+            yield Collection(path)
+
+            if depth != '0':
+                for adapter in self.adapters:
+                    for filename in adapter.get_filesnames():
+                        yield Collection(filename.replace(self.filesystem_folder, ''), filename, adapter)
+            return
+
+        filename = join(self.filesystem_folder, dirname(path).strip('/'))
+        collection = None
+
+        for adapter in self.adapters:
+            if filename in adapter.get_filesnames():
+                collection = Collection(path, filename, adapter)
+                break
+
+        if not collection:
+            return
+
+        if path.endswith('/'):
+            yield collection
+
+            if depth != '0':
+                for uid in collection._list():
+                    yield collection._get(uid)
+            return
+
+        if basename(path) in collection._list():
+            yield collection._get(basename(path))
+            return
+
+    def move(self, item, to_collection, to_href):
+        """Move an object.
+
+        ``item`` is the item to move.
+
+        ``to_collection`` is the target collection.
+
+        ``to_href`` is the target name in ``to_collection``. An item with the
+        same name might already exist.
+
+        """
+        if item.collection.path == to_collection.path and item.href == to_href:
+            return
+
+        to_collection.adapter.move_vobject(to_href, item.collection.filename, to_collection.filename)
+
+    def create_collection(self, href, items=None, props=None):
+        """Create a collection.
+
+        ``href`` is the sanitized path.
+
+        If the collection already exists and neither ``collection`` nor
+        ``props`` are set, this method shouldn't do anything. Otherwise the
+        existing collection must be replaced.
+
+        ``collection`` is a list of vobject components.
+
+        ``props`` are metadata values for the collection.
+
+        ``props["tag"]`` is the type of collection (VCALENDAR or
+        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
+        collection.
+
+        """
+        raise NotImplementedError
+
     @contextmanager
-    def acquire_lock(cls, mode, user=None):
-        """Set a context manager to lock the whole storage."""
+    def acquire_lock(self, mode, user=None):
+        """Set a context manager to lock the whole storage.
+
+        ``mode`` must either be "r" for shared access or "w" for exclusive
+        access.
+
+        ``user`` is the name of the logged in user or empty.
+
+        """
         yield
+
+    def verify(self):
+        """Check the storage for errors."""
+        return True
