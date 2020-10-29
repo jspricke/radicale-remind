@@ -57,9 +57,9 @@ Config
   [storage]
   type = radicale_remind
   filesystem_folder = /home
-  remind_file = /path/to/.reminders
-  abook_file = /path/to/.abook/addressbook
-  task_folder = /path/to/.task
+  remind_file = /home/user/.reminders
+  abook_file = /home/user/.abook/addressbook
+  task_folder = /home/user/.task
   
   [web]
   type = none
@@ -76,3 +76,11 @@ Run
   $ radicale
 
 Add hostname:5232 to your CalDAV clients, like `DAVdroid <https://www.davdroid.com/>`_ available in `F-Droid <https://f-droid.org/>`_.
+
+
+Client test
+-----------
+
+::
+
+  $ curl -k -X GET -u user -H "Accept: text/calendar" https://localhost:5232/user/.reminders/
