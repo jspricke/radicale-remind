@@ -75,7 +75,7 @@ Run
 
   $ radicale
 
-Add hostname:5232 to your CalDAV clients, like `DAVdroid <https://www.davdroid.com/>`_ available in `F-Droid <https://f-droid.org/>`_.
+Add hostname:5232 to your CalDAV clients, like `DAVx⁵ <https://www.davx5.com/>`_ available in `F-Droid <https://f-droid.org/de/packages/at.bitfire.davdroid/>`_.
 
 
 Client test
