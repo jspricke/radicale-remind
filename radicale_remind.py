@@ -149,7 +149,9 @@ class Storage(BaseStorage):
             tz = None
             if 'remind_timezone' in configuration.options('storage'):
                 tz = timezone(configuration.get('storage', 'remind_timezone'))
-            month = configuration.get('storage', 'remind_lookahead_month') or 15
+            month = 15
+            if 'remind_lookahead_month' in configuration.get('storage'):
+                month = configuration.get('storage', 'remind_lookahead_month')
             self.adapters.append(Remind(configuration.get('storage', 'remind_file'), tz, month=month))
 
         if 'abook_file' in configuration.options('storage'):
