@@ -150,7 +150,7 @@ class Storage(BaseStorage):
             if 'remind_timezone' in configuration.options('storage'):
                 tz = timezone(configuration.get('storage', 'remind_timezone'))
             month = 15
-            if 'remind_lookahead_month' in configuration.get('storage'):
+            if 'remind_lookahead_month' in configuration.options('storage'):
                 month = configuration.get('storage', 'remind_lookahead_month')
             self.adapters.append(Remind(configuration.get('storage', 'remind_file'), tz, month=month))
 
@@ -162,7 +162,9 @@ class Storage(BaseStorage):
             task_projects = []
             if 'task_projects' in configuration.options('storage'):
                 task_projects = configuration.get('storage', 'task_projects').split(',')
-            task_start = configuration.get('storage', 'task_start') or True
+            task_start = True
+            if 'task_start' in configuration.options('storage'):
+                task_start = configuration.get('storage', 'task_start')
             self.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
 
     def discover(self, path, depth="0"):
