@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='radicale-remind',
-      version='0.3.0',
+      version='0.4.0',
       description='Radicale Remind, Abook and Taskwarrior storage backend',
       long_description=open('README.rst').read(),
       author='Jochen Sprickerhof',
