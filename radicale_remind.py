@@ -21,13 +21,13 @@ from colorsys import hsv_to_rgb
 from contextlib import contextmanager
 from icstask import IcsTask
 from os.path import basename, dirname, expanduser, join
-from pytz import timezone
 from radicale.item import Item
 from radicale.log import logger
 from radicale.pathutils import sanitize_path
 from radicale.storage import BaseCollection, BaseStorage
 from remind import Remind
 from time import gmtime, strftime
+from zoneinfo import ZoneInfo
 
 
 class Collection(BaseCollection):
@@ -148,7 +148,7 @@ class Storage(BaseStorage):
         if 'remind_file' in configuration.options('storage'):
             tz = None
             if 'remind_timezone' in configuration.options('storage'):
-                tz = timezone(configuration.get('storage', 'remind_timezone'))
+                tz = ZoneInfo(configuration.get('storage', 'remind_timezone'))
             month = 15
             if 'remind_lookahead_month' in configuration.options('storage'):
                 month = configuration.get('storage', 'remind_lookahead_month')

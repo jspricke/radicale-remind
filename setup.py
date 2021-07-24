@@ -21,5 +21,5 @@ setup(name='radicale-remind',
           "Topic :: Office/Business :: Groupware"
       ],
 
-      install_requires=['abook', 'icstask', 'Radicale', 'remind', 'pytz'],
+      install_requires=['Radicale', 'abook', 'icstask', 'remind'],
       py_modules=['radicale_remind'],)
