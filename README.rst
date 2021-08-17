@@ -2,7 +2,7 @@ Radicale Remind Storage
 =======================
 
 Radicale storage backends providing a two way sync for Remind, Abook and
-Taskwarrior. Remind files included from the main fail are exported as
+Taskwarrior. Remind files included from the main file are exported as
 individual iCal calendars, Taskwarrior projects as individual iCal todo lists.
 Also see the limitations sections for `Remind limitations
 <https://github.com/jspricke/python-remind#known-limitations>`_ and
