@@ -14,51 +14,59 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-"""Remind, Abook, Taskwarrior Storage backend for Radicale"""
+"""Remind, Abook, Taskwarrior Storage backend for Radicale."""
+
+from colorsys import hsv_to_rgb
+from os.path import basename, dirname, expanduser, join
+from time import gmtime, strftime
+from typing import (Iterable, Iterator, List, Mapping, Optional, Tuple, Union,
+                    overload)
+from zoneinfo import ZoneInfo
 
 from abook import Abook
-from colorsys import hsv_to_rgb
-from contextlib import contextmanager
 from icstask import IcsTask
-from os.path import basename, dirname, expanduser, join
+from radicale import config
+from radicale import item as radicale_item
+from radicale import types
 from radicale.item import Item
 from radicale.log import logger
 from radicale.pathutils import sanitize_path
 from radicale.storage import BaseCollection, BaseStorage
 from remind import Remind
-from time import gmtime, strftime
-from zoneinfo import ZoneInfo
+from vobject.base import Component
 
 
 class Collection(BaseCollection):
-    """Collection stored in adapters for Remind, Abook, Taskwarrior"""
+    """Collection stored in adapters for Remind, Abook, Taskwarrior."""
 
-    def __init__(self, path, filename=None, adapter=None):
-        self._path = sanitize_path(path).strip('/')
+    def __init__(self, path: str, filename: str, adapter: Union[Abook, IcsTask, Remind]) -> None:
+        self._path = sanitize_path(path).strip("/")
         self.filename = filename
         self.adapter = adapter
 
     @property
-    def path(self):
+    def path(self) -> str:
         """The sanitized path of the collection without leading or
         trailing ``/``."""
         return self._path
 
-    def sync(self, old_token=None):
+    def sync(self, old_token: str = "") -> Tuple[str, Iterable[str]]:
         """Get the current sync token and changed items for synchronization.
 
         ``old_token`` an old sync token which is used as the base of the
-        delta update. If sync token is missing, all items are returned.
+        delta update. If sync token is empty, all items are returned.
         ValueError is raised for invalid or old tokens.
 
         WARNING: This simple default implementation treats all sync-token as
                  invalid.
 
         """
-        token = "http://radicale.org/ns/sync/%s" % self.etag.strip("\"")
+        token = "http://radicale.org/ns/sync/%s" % self.etag.strip('"')
         return token, (item.href for item in self.get_all())
 
-    def get_multi(self, hrefs):
+# fmt: off
+    def get_multi(self, hrefs: Iterable[str]
+                  ) -> Iterable[Tuple[str, Optional["radicale_item.Item"]]]:
         """Fetch multiple items.
 
         It's not required to return the requested items in the correct order.
@@ -68,73 +76,115 @@ class Collection(BaseCollection):
         exist.
 
         """
-        return ((x[0], self._convert(x)) for x in self.adapter.to_vobjects(self.filename, hrefs))
+# fmt: on
+        return (
+            (x[0], self._convert(x))
+            for x in self.adapter.to_vobjects(self.filename, hrefs)
+        )
 
-    def get_all(self):
+    def get_all(self) -> Iterable["radicale_item.Item"]:
         """Fetch all items."""
         return (self._convert(x) for x in self.adapter.to_vobjects(self.filename))
 
-    def _list(self):
+    def _list(self) -> Iterable[str]:
         """List collection items."""
         if not self.adapter:
-            logger.warning("No adapter for collection: %r, please provide a full path", self.path)
+            logger.warning(
+                "No adapter for collection: %r, please provide a full path", self.path
+            )
             return
         for uid in self.adapter.get_uids(self.filename):
             yield uid
 
-    def _convert(self, elem):
+    def _convert(self, elem: Tuple[str, Component, str]) -> radicale_item.Item:
         """Fetch a single item."""
-        return Item(collection=self, vobject_item=elem[1], href=elem[0], last_modified=self.last_modified, etag=elem[2])
+        return Item(
+            collection=self,
+            vobject_item=elem[1],
+            href=elem[0],
+            last_modified=self.last_modified,
+            etag=elem[2],
+        )
 
-    def _get(self, href):
+    def _get(self, href: str) -> radicale_item.Item:
         """Fetch a single item."""
         item, etag = self.adapter.to_vobject_etag(self.filename, href)
         return self._convert((href, item, etag))
 
-    def has_uid(self, uid):
+    def has_uid(self, uid: str) -> bool:
         """Check if a UID exists in the collection."""
         return uid in self.adapter.get_uids()
 
-    def upload(self, href, item):
+# fmt: off
+    def upload(self, href: str, item: "radicale_item.Item") -> (
+            "radicale_item.Item"):
         """Upload a new or replace an existing item."""
+# fmt: on
         if href in self.adapter.get_uids(self.filename):
             uid = self.adapter.replace_vobject(href, item.vobject_item, self.filename)
         else:
             uid = self.adapter.append_vobject(item.vobject_item, self.filename)
         try:
             return self._get(uid)
-        except KeyError:
-            logger.warning("Unable to find uploaded event, maybe increase remind_lookahead_month")
+        except KeyError as e:
+            logger.warning(
+                "Unable to find uploaded event, maybe increase remind_lookahead_month"
+            )
+            raise ValueError("Failed to store item %r in collection %r: %s" %
+                 (href, self.path, e)) from e
 
-    def delete(self, href=None):
-        """Delete an item."""
+    def delete(self, href: Optional[str] = None) -> None:
+        """Delete an item.
+
+        When ``href`` is ``None``, delete the collection.
+
+        """
+        if not href:
+            raise NotImplementedError
+
         self.adapter.remove(href, self.filename)
 
-    def _get_color(self):
+    def _get_color(self) -> str:
         files = self.adapter.get_filesnames()
         index = files.index(self.filename)
         rgb = hsv_to_rgb((index / len(files) + 1 / 3) % 1.0, 0.5, 1.0)
         r, g, b = (int(255 * x) for x in rgb)
-        return '#{r:02x}{g:02x}{b:02x}'.format(**locals())
+        return "#{r:02x}{g:02x}{b:02x}".format(**locals())
 
-    def get_meta(self, key=None):
-        """Get metadata value for collection."""
+# fmt: off
+    @overload
+    def get_meta(self, key: None = None) -> Mapping[str, str]: ...
+
+    @overload
+    def get_meta(self, key: str) -> Optional[str]: ...
+
+    def get_meta(self, key: Optional[str] = None
+                 ) -> Union[Mapping[str, str], Optional[str]]:
+        """Get metadata value for collection.
+
+        Return the value of the property ``key``. If ``key`` is ``None`` return
+        a dict with all properties
+
+        """
+# fmt: on
         if self.adapter:
             meta = self.adapter.get_meta()
-            meta['D:displayname'] = basename(self.path)
-            meta['ICAL:calendar-color'] = self._get_color()
+            meta["D:displayname"] = basename(self.path)
+            meta["ICAL:calendar-color"] = self._get_color()
         else:
             meta = {}
         return meta.get(key) if key else meta
 
     @property
-    def last_modified(self):
+    def last_modified(self) -> str:
         """Get the HTTP-datetime of when the collection was modified."""
-        return strftime('%a, %d %b %Y %H:%M:%S +0000', gmtime(self.adapter.last_modified()))
+        return strftime(
+            "%a, %d %b %Y %H:%M:%S +0000", gmtime(self.adapter.last_modified())
+        )
 
 
 class Storage(BaseStorage):
-    def __init__(self, configuration):
+    def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseStorage.
 
         ``configuration`` see ``radicale.config`` module.
@@ -142,32 +192,40 @@ class Storage(BaseStorage):
         this object, it is kept as an internal reference.
 
         """
-        self.adapters = []
-        self.filesystem_folder = expanduser(configuration.get('storage', 'filesystem_folder'))
+        self.adapters: List[Union[Abook, IcsTask, Remind]] = []
+        self.filesystem_folder = expanduser(
+            configuration.get("storage", "filesystem_folder")
+        )
 
-        if 'remind_file' in configuration.options('storage'):
+        if "remind_file" in configuration.options("storage"):
             tz = None
-            if 'remind_timezone' in configuration.options('storage'):
-                tz = ZoneInfo(configuration.get('storage', 'remind_timezone'))
+            if "remind_timezone" in configuration.options("storage"):
+                tz = ZoneInfo(configuration.get("storage", "remind_timezone"))
             month = 15
-            if 'remind_lookahead_month' in configuration.options('storage'):
-                month = configuration.get('storage', 'remind_lookahead_month')
-            self.adapters.append(Remind(configuration.get('storage', 'remind_file'), tz, month=month))
+            if "remind_lookahead_month" in configuration.options("storage"):
+                month = configuration.get("storage", "remind_lookahead_month")
+            self.adapters.append(
+                Remind(configuration.get("storage", "remind_file"), tz, month=month)
+            )
 
-        if 'abook_file' in configuration.options('storage'):
-            self.adapters.append(Abook(configuration.get('storage', 'abook_file')))
+        if "abook_file" in configuration.options("storage"):
+            self.adapters.append(Abook(configuration.get("storage", "abook_file")))
 
-        if 'task_folder' in configuration.options('storage'):
-            task_folder = configuration.get('storage', 'task_folder')
+        if "task_folder" in configuration.options("storage"):
+            task_folder = configuration.get("storage", "task_folder")
             task_projects = []
-            if 'task_projects' in configuration.options('storage'):
-                task_projects = configuration.get('storage', 'task_projects').split(',')
+            if "task_projects" in configuration.options("storage"):
+                task_projects = configuration.get("storage", "task_projects").split(",")
             task_start = True
-            if 'task_start' in configuration.options('storage'):
-                task_start = configuration.get('storage', 'task_start')
-            self.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
+            if "task_start" in configuration.options("storage"):
+                task_start = configuration.get("storage", "task_start")
+            self.adapters.append(
+                IcsTask(task_folder, task_projects=task_projects, start_task=task_start)
+            )
 
-    def discover(self, path, depth="0"):
+# fmt: off
+    def discover(self, path: str, depth: str = "0") -> Iterable[
+            "types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 
         ``path`` is sanitized.
@@ -181,18 +239,21 @@ class Storage(BaseStorage):
         The root collection "/" must always exist.
 
         """
-        """Discover a list of collections under the given ``path``."""
+# fmt: on
+        if path.count("/") < 3:
+            yield BaseCollection()
 
-        if path.count('/') < 3:
-            yield Collection(path)
-
-            if depth != '0':
+            if depth != "0":
                 for adapter in self.adapters:
                     for filename in adapter.get_filesnames():
-                        yield Collection(filename.replace(self.filesystem_folder, ''), filename, adapter)
+                        yield Collection(
+                            filename.replace(self.filesystem_folder, ""),
+                            filename,
+                            adapter,
+                        )
             return
 
-        filename = join(self.filesystem_folder, dirname(path).strip('/'))
+        filename = join(self.filesystem_folder, dirname(path).strip("/"))
         collection = None
 
         for adapter in self.adapters:
@@ -203,10 +264,10 @@ class Storage(BaseStorage):
         if not collection:
             return
 
-        if path.endswith('/'):
+        if path.endswith("/"):
             yield collection
 
-            if depth != '0':
+            if depth != "0":
                 for uid in collection._list():
                     yield collection._get(uid)
             return
@@ -215,7 +276,9 @@ class Storage(BaseStorage):
             yield collection._get(basename(path))
             return
 
-    def move(self, item, to_collection, to_href):
+# fmt: off
+    def move(self, item: "radicale_item.Item", to_collection: BaseCollection,
+             to_href: str) -> None:
         """Move an object.
 
         ``item`` is the item to move.
@@ -226,33 +289,19 @@ class Storage(BaseStorage):
         same name might already exist.
 
         """
+# fmt: on
+        if not isinstance(item.collection, Collection) or not isinstance(to_collection, Collection):
+            raise NotImplementedError
+
         if item.collection.path == to_collection.path and item.href == to_href:
             return
 
-        to_collection.adapter.move_vobject(to_href, item.collection.filename, to_collection.filename)
+        to_collection.adapter.move_vobject(
+            to_href, item.collection.filename, to_collection.filename
+        )
 
-    def create_collection(self, href, items=None, props=None):
-        """Create a collection.
-
-        ``href`` is the sanitized path.
-
-        If the collection already exists and neither ``collection`` nor
-        ``props`` are set, this method shouldn't do anything. Otherwise the
-        existing collection must be replaced.
-
-        ``collection`` is a list of vobject components.
-
-        ``props`` are metadata values for the collection.
-
-        ``props["tag"]`` is the type of collection (VCALENDAR or
-        VADDRESSBOOK). If the key ``tag`` is missing, it is guessed from the
-        collection.
-
-        """
-        raise NotImplementedError
-
-    @contextmanager
-    def acquire_lock(self, mode, user=None):
+    @types.contextmanager
+    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
         """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive
@@ -263,6 +312,6 @@ class Storage(BaseStorage):
         """
         yield
 
-    def verify(self):
+    def verify(self) -> bool:
         """Check the storage for errors."""
         return True
