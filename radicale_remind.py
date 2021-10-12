@@ -19,8 +19,8 @@
 from colorsys import hsv_to_rgb
 from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
-from typing import (Iterable, Iterator, List, Mapping, Optional, Tuple, Union,
-                    overload)
+from typing import (Dict, Iterable, Iterator, List, Mapping, Optional, Tuple,
+                    Union, overload)
 from zoneinfo import ZoneInfo
 
 from abook import Abook
@@ -66,6 +66,8 @@ class MinCollection(BaseCollection):
 
 
 class Collection(BaseCollection):
+    uid_cache: Dict[str, str] = {}
+
     """Collection stored in adapters for Remind, Abook, Taskwarrior."""
 
     def __init__(self, path: str, filename: str, adapter: Union[Abook, IcsTask, Remind]) -> None:
@@ -92,6 +94,7 @@ class Collection(BaseCollection):
 
         """
 # fmt: on
+        hrefs = [Collection.uid_cache.get(href, href) for href in hrefs]
         return (
             (x[0], self._convert(x))
             for x in self.adapter.to_vobjects(self.filename, hrefs)
@@ -130,10 +133,12 @@ class Collection(BaseCollection):
             "radicale_item.Item"):
         """Upload a new or replace an existing item."""
 # fmt: on
+        href = Collection.uid_cache.get(href, href)
         if href in self.adapter.get_uids(self.filename):
             uid = self.adapter.replace_vobject(href, item.vobject_item, self.filename)
         else:
             uid = self.adapter.append_vobject(item.vobject_item, self.filename)
+            Collection.uid_cache[href] = uid
         try:
             return self._get(uid)
         except KeyError as e:
@@ -148,6 +153,7 @@ class Collection(BaseCollection):
         When ``href`` is ``None``, delete the collection.
 
         """
+        href = Collection.uid_cache.get(href, href)
         if not href:
             raise NotImplementedError
 
