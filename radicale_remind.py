@@ -36,6 +36,35 @@ from remind import Remind
 from vobject.base import Component
 
 
+class MinCollection(BaseCollection):
+    def __init__(self, path: str) -> None:
+        self._path = sanitize_path(path).strip("/")
+
+    @property
+    def path(self) -> str:
+        """The sanitized path of the collection without leading or
+        trailing ``/``."""
+        return self._path
+
+# fmt: off
+    @overload
+    def get_meta(self, key: None = None) -> Mapping[str, str]: ...
+
+    @overload
+    def get_meta(self, key: str) -> Optional[str]: ...
+
+    def get_meta(self, key: Optional[str] = None
+                 ) -> Union[Mapping[str, str], Optional[str]]:
+        """Get metadata value for collection.
+
+        Return the value of the property ``key``. If ``key`` is ``None`` return
+        a dict with all properties
+
+        """
+# fmt: on
+        return None if key else {}
+
+
 class Collection(BaseCollection):
     """Collection stored in adapters for Remind, Abook, Taskwarrior."""
 
@@ -74,11 +103,6 @@ class Collection(BaseCollection):
 
     def _list(self) -> Iterable[str]:
         """List collection items."""
-        if not self.adapter:
-            logger.warning(
-                "No adapter for collection: %r, please provide a full path", self.path
-            )
-            return
         for uid in self.adapter.get_uids(self.filename):
             yield uid
 
@@ -116,8 +140,7 @@ class Collection(BaseCollection):
             logger.warning(
                 "Unable to find uploaded event, maybe increase remind_lookahead_month"
             )
-            raise ValueError("Failed to store item %r in collection %r: %s" %
-                 (href, self.path, e)) from e
+            raise ValueError(f"Failed to store item {href} in collection {self.path}: {e}") from e
 
     def delete(self, href: Optional[str] = None) -> None:
         """Delete an item.
@@ -153,12 +176,9 @@ class Collection(BaseCollection):
 
         """
 # fmt: on
-        if self.adapter:
-            meta = self.adapter.get_meta()
-            meta["D:displayname"] = basename(self.path)
-            meta["ICAL:calendar-color"] = self._get_color()
-        else:
-            meta = {}
+        meta = self.adapter.get_meta()
+        meta["D:displayname"] = basename(self.path)
+        meta["ICAL:calendar-color"] = self._get_color()
         return meta.get(key) if key else meta
 
     @property
@@ -227,7 +247,7 @@ class Storage(BaseStorage):
         """
 # fmt: on
         if path.count("/") < 3:
-            yield BaseCollection()
+            yield MinCollection(path)
 
             if depth != "0":
                 for adapter in self.adapters:
