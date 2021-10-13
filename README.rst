@@ -23,8 +23,8 @@ Dependencies
 Installation
 ------------
 
-You need to have the Remind and Taskwarrior command line tools installed.
-For Debian/Ubuntu use::
+You need to have the Remind and Taskwarrior command line tools installed if you
+want to use the respective adapters. For Debian/Ubuntu use::
 
   $ sudo apt-get install remind taskwarrior
 
@@ -42,7 +42,7 @@ Using python-setuptools
 
 ::
 
-  $ python setup.py install
+  $ python3 setup.py install
 
 
 Config
