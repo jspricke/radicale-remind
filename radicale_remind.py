@@ -153,9 +153,9 @@ class Collection(BaseCollection):
         When ``href`` is ``None``, delete the collection.
 
         """
-        href = Collection.uid_cache.get(href, href)
         if not href:
             raise NotImplementedError
+        href = Collection.uid_cache.get(href, href)
 
         self.adapter.remove(href, self.filename)
 
