@@ -19,8 +19,8 @@
 from colorsys import hsv_to_rgb
 from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
-from typing import (Dict, Iterable, Iterator, List, Mapping, Optional, Tuple,
-                    Union, overload)
+from typing import (Iterable, Iterator, Mapping, Optional, Tuple, Union,
+                    overload)
 from zoneinfo import ZoneInfo
 
 from abook import Abook
@@ -66,7 +66,7 @@ class MinCollection(BaseCollection):
 
 
 class Collection(BaseCollection):
-    uid_cache: Dict[str, str] = {}
+    uid_cache: dict[str, str] = {}
 
     """Collection stored in adapters for Remind, Abook, Taskwarrior."""
 
@@ -109,7 +109,7 @@ class Collection(BaseCollection):
         for uid in self.adapter.get_uids(self.filename):
             yield uid
 
-    def _convert(self, elem: Tuple[str, Component, str]) -> radicale_item.Item:
+    def _convert(self, elem: tuple[str, Component, str]) -> radicale_item.Item:
         """Fetch a single item."""
         return Item(
             collection=self,
@@ -204,7 +204,7 @@ class Storage(BaseStorage):
         this object, it is kept as an internal reference.
 
         """
-        self.adapters: List[Union[Abook, IcsTask, Remind]] = []
+        self.adapters: list[Union[Abook, IcsTask, Remind]] = []
         self.filesystem_folder = expanduser(
             configuration.get("storage", "filesystem_folder")
         )
