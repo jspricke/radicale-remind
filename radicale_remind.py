@@ -37,6 +37,7 @@ from vobject.base import Component
 
 
 class MinCollection(BaseCollection):
+
     def __init__(self, path: str) -> None:
         self._path = sanitize_path(path).strip("/")
 
@@ -141,11 +142,11 @@ class Collection(BaseCollection):
             Collection.uid_cache[href] = uid
         try:
             return self._get(uid)
-        except KeyError as e:
+        except KeyError as error:
             logger.warning(
                 "Unable to find uploaded event, maybe increase remind_lookahead_month"
             )
-            raise ValueError(f"Failed to store item {href} in collection {self.path}: {e}") from e
+            raise ValueError(f"Failed to store item {href} in collection {self.path}: {error}") from error
 
     def delete(self, href: Optional[str] = None) -> None:
         """Delete an item.
@@ -163,8 +164,8 @@ class Collection(BaseCollection):
         files = self.adapter.get_filesnames()
         index = files.index(self.filename)
         rgb = hsv_to_rgb((index / len(files) + 1 / 3) % 1.0, 0.5, 1.0)
-        r, g, b = (int(255 * x) for x in rgb)
-        return "#{r:02x}{g:02x}{b:02x}".format(**locals())
+        red, green, blue = (int(255 * x) for x in rgb)
+        return f"#{red:02x}{green:02x}{blue:02x}"
 
 # fmt: off
     @overload
@@ -196,6 +197,7 @@ class Collection(BaseCollection):
 
 
 class Storage(BaseStorage):
+
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseStorage.
 
@@ -204,20 +206,21 @@ class Storage(BaseStorage):
         this object, it is kept as an internal reference.
 
         """
+        super().__init__(configuration)
         self.adapters: list[Union[Abook, IcsTask, Remind]] = []
         self.filesystem_folder = expanduser(
             configuration.get("storage", "filesystem_folder")
         )
 
         if "remind_file" in configuration.options("storage"):
-            tz = None
+            zone = None
             if "remind_timezone" in configuration.options("storage"):
-                tz = ZoneInfo(configuration.get("storage", "remind_timezone"))
+                zone = ZoneInfo(configuration.get("storage", "remind_timezone"))
             month = 15
             if "remind_lookahead_month" in configuration.options("storage"):
                 month = configuration.get("storage", "remind_lookahead_month")
             self.adapters.append(
-                Remind(configuration.get("storage", "remind_file"), tz, month=month)
+                Remind(configuration.get("storage", "remind_file"), zone, month=month)
             )
 
         if "abook_file" in configuration.options("storage"):
