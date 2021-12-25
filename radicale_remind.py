@@ -107,8 +107,7 @@ class Collection(BaseCollection):
 
     def _list(self) -> Iterable[str]:
         """List collection items."""
-        for uid in self.adapter.get_uids(self.filename):
-            yield uid
+        yield from self.adapter.get_uids(self.filename)
 
     def _convert(self, elem: tuple[str, Component, str]) -> radicale_item.Item:
         """Fetch a single item."""
