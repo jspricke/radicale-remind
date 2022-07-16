@@ -69,12 +69,27 @@ The ``remind_file``, ``abook_file`` and ``task_folder`` are optional, and can be
 
 ::
 
+  # Allow reading root collection for authenticated users
   [root]
-  user: .*
-  collection: .*
-  permissions: RrWw
+  user: .+
+  collection:
+  permissions: R
 
-Put this into ``/home/user/.config/radicale/rights``. This is needed to allow access to collections with a slash in the name like ``.abook/addressbook/``.
+  # Allow reading and writing principal collection (same as username)
+  [principal]
+  user: .+
+  collection: {user}
+  permissions: RW
+
+  # Allow reading and writing calendars and address books that are
+  # children of the principal collection
+  [calendars]
+  user: .+
+  collection: {user}/.*
+  permissions: rw
+
+Put this into ``/home/user/.config/radicale/rights``.
+This is modified from ``owner_only`` and needed to allow access to collections with a slash in the name like ``.abook/addressbook/``.
 Please read the `Radicale documentation <https://radicale.org/master.html#documentation>`_ for how to set up secure connections and authentication.
 
 Run
