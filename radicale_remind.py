@@ -69,6 +69,18 @@ class MinCollection(BaseCollection):
 # fmt: on
         return None if key else {}
 
+    def get_multi(self, hrefs: Iterable[str]
+                  ) -> Iterable[tuple[str, None | radicale_item.Item]]:
+        """Fetch multiple items.
+
+        It's not required to return the requested items in the correct order.
+        Duplicated hrefs can be ignored.
+
+        Returns tuples with the href and the item or None if the item doesn't
+        exist.
+
+        """
+        return ()
 
 class Collection(BaseCollection):
     uid_cache: dict[str, str] = {}
