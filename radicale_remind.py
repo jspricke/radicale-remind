@@ -203,6 +203,13 @@ class Collection(BaseCollection):
         meta["ICAL:calendar-color"] = self._get_color()
         return meta.get(key) if key else meta
 
+    def set_meta(self, props: Mapping[str, str]) -> None:
+        """Set metadata values for collection.
+
+        ``props`` a dict with values for properties.
+
+        """
+
     @property
     def last_modified(self) -> str:
         """Get the HTTP-datetime of when the collection was modified."""
