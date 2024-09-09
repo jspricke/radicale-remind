@@ -41,7 +41,6 @@ from vobject.base import Component
 
 
 class MinCollection(BaseCollection):
-
     def __init__(self, path: str) -> None:
         self._path = sanitize_path(path).strip("/")
 
@@ -51,7 +50,7 @@ class MinCollection(BaseCollection):
         trailing ``/``."""
         return self._path
 
-# fmt: off
+    # fmt: off
     @overload
     def get_meta(self, key: None = None) -> Mapping[str, str]: ...
 
@@ -66,7 +65,7 @@ class MinCollection(BaseCollection):
         a dict with all properties
 
         """
-# fmt: on
+    # fmt: on
         return None if key else {}
 
     def get_multi(self, hrefs: Iterable[str]
@@ -81,6 +80,7 @@ class MinCollection(BaseCollection):
 
         """
         return ()
+
 
 class Collection(BaseCollection):
     uid_cache: dict[str, str] = {}
@@ -98,7 +98,7 @@ class Collection(BaseCollection):
         trailing ``/``."""
         return self._path
 
-# fmt: off
+    # fmt: off
     def get_multi(self, hrefs: Iterable[str]
                   ) -> Iterable[tuple[str, None | radicale_item.Item]]:
         """Fetch multiple items.
@@ -110,7 +110,7 @@ class Collection(BaseCollection):
         exist.
 
         """
-# fmt: on
+    # fmt: on
         hrefs = [Collection.uid_cache.get(href, href) for href in hrefs]
         return (
             (x[0], self._convert(x))
@@ -144,11 +144,11 @@ class Collection(BaseCollection):
         """Check if a UID exists in the collection."""
         return uid in self.adapter.get_uids()
 
-# fmt: off
+    # fmt: off
     def upload(self, href: str, item: radicale_item.Item) -> (
             radicale_item.Item):
         """Upload a new or replace an existing item."""
-# fmt: on
+    # fmt: on
         href = Collection.uid_cache.get(href, href)
         if href in self.adapter.get_uids(self.filename):
             uid = self.adapter.replace_vobject(href, item.vobject_item, self.filename)
@@ -182,7 +182,7 @@ class Collection(BaseCollection):
         red, green, blue = (int(255 * x) for x in rgb)
         return f"#{red:02x}{green:02x}{blue:02x}"
 
-# fmt: off
+    # fmt: off
     @overload
     def get_meta(self, key: None = None) -> Mapping[str, str]: ...
 
@@ -197,7 +197,7 @@ class Collection(BaseCollection):
         a dict with all properties
 
         """
-# fmt: on
+    # fmt: on
         meta = self.adapter.get_meta()
         meta["D:displayname"] = basename(self.path)
         meta["ICAL:calendar-color"] = self._get_color()
@@ -219,7 +219,6 @@ class Collection(BaseCollection):
 
 
 class Storage(BaseStorage):
-
     def __init__(self, configuration: "config.Configuration") -> None:
         """Initialize BaseStorage.
 
@@ -230,9 +229,7 @@ class Storage(BaseStorage):
         """
         super().__init__(configuration)
         self.adapters: list[Abook | IcsTask | Remind] = []
-        self.filesystem_folder = expanduser(
-            configuration.get("storage", "filesystem_folder")
-        )
+        self.filesystem_folder = expanduser(configuration.get("storage", "filesystem_folder"))
 
         if "remind_file" in configuration.options("storage"):
             zone = None
@@ -241,9 +238,7 @@ class Storage(BaseStorage):
             month = 15
             if "remind_lookahead_month" in configuration.options("storage"):
                 month = configuration.get("storage", "remind_lookahead_month")
-            self.adapters.append(
-                Remind(configuration.get("storage", "remind_file"), zone, month=month)
-            )
+            self.adapters.append(Remind(configuration.get("storage", "remind_file"), zone, month=month))
 
         if "abook_file" in configuration.options("storage"):
             self.adapters.append(Abook(configuration.get("storage", "abook_file")))
@@ -256,11 +251,9 @@ class Storage(BaseStorage):
             task_start = True
             if "task_start" in configuration.options("storage"):
                 task_start = configuration.get("storage", "task_start")
-            self.adapters.append(
-                IcsTask(task_folder, task_projects=task_projects, start_task=task_start)
-            )
+            self.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
 
-# fmt: off
+    # fmt: off
     def discover(self, path: str, depth: str = "0") -> Iterable[
             "types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
@@ -276,7 +269,7 @@ class Storage(BaseStorage):
         The root collection "/" must always exist.
 
         """
-# fmt: on
+    # fmt: on
         if path.count("/") < 3:
             yield MinCollection(path)
 
@@ -313,7 +306,7 @@ class Storage(BaseStorage):
             yield collection._get(basename(path))
             return
 
-# fmt: off
+    # fmt: off
     def move(self, item: radicale_item.Item, to_collection: BaseCollection,
              to_href: str) -> None:
         """Move an object.
@@ -326,7 +319,7 @@ class Storage(BaseStorage):
         same name might already exist.
 
         """
-# fmt: on
+    # fmt: on
         if not isinstance(item.collection, Collection) or not isinstance(to_collection, Collection):
             raise NotImplementedError
 
