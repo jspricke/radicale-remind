@@ -178,7 +178,7 @@ class Collection(BaseCollection):
     def _get_color(self) -> str:
         files = self.adapter.get_filesnames()
         index = files.index(self.filename)
-        rgb = hsv_to_rgb((index / len(files) + 1 / 3) % 1.0, 0.5, 1.0)
+        rgb = hsv_to_rgb(index / len(files), 0.5, 0.9)
         red, green, blue = (int(255 * x) for x in rgb)
         return f"#{red:02x}{green:02x}{blue:02x}"
 
