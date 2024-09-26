@@ -20,7 +20,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from colorsys import hsv_to_rgb
 from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
-from typing import overload
+from typing import Callable, ContextManager, overload
 from zoneinfo import ZoneInfo
 
 from abook import Abook
@@ -254,8 +254,11 @@ class Storage(BaseStorage):
             self.adapters.append(IcsTask(task_folder, task_projects=task_projects, start_task=task_start))
 
     # fmt: off
-    def discover(self, path: str, depth: str = "0") -> Iterable[
-            "types.CollectionOrItem"]:
+    def discover(
+            self, path: str, depth: str = "0",
+            child_context_manager:
+            Callable[[str, str | None ], ContextManager[None]] | None = None,
+            user_groups: set[str] = set([])) -> Iterable[types.CollectionOrItem]:
         """Discover a list of collections under the given ``path``.
 
         ``path`` is sanitized.
