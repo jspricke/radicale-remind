@@ -67,6 +67,8 @@ Config
 Put this into ``/home/user/.config/radicale/config`` (replace ``/home/user`` by your ``$HOME``).
 The ``remind_file``, ``abook_file`` and ``task_folder`` are optional, and can be removed if not used.
 
+It is required that the ``filesystem_folder`` be set to ``/home``.  
+
 ::
 
   # Allow reading root collection for authenticated users
@@ -107,7 +109,10 @@ Client test
 
 ::
 
-  $ curl -u u:p -X PROPFIND -H "Depth: 1" -d "<propfind><prop></prop></propfind>" "http://localhost:5232"
-  $ curl -u u:p "http://localhost:5232/user/.reminders/"
-  $ curl -u u:p "http://localhost:5232/user/.abook/addressbook/"
-  $ curl -u u:p "http://localhost:5232/user/.task/all_projects/"
+  $ curl -u user:password -X PROPFIND -H "Depth: 1" -d "<propfind><prop></prop></propfind>" "http://localhost:5232"
+  $ curl -u user:password "http://localhost:5232/user/.reminders/"
+  $ curl -u user:password "http://localhost:5232/user/.abook/addressbook/"
+  $ curl -u user:password "http://localhost:5232/user/.task/all_projects/"
+
+Note that the trailing slash is required for all paths (directories and singular files). 
+The trailing slashes are not required in your ``radicale`` conf.
