@@ -67,7 +67,8 @@ Config
 Put this into ``/home/user/.config/radicale/config`` (replace ``/home/user`` by your ``$HOME``).
 The ``remind_file``, ``abook_file`` and ``task_folder`` are optional, and can be removed if not used.
 
-It is required that the ``filesystem_folder`` be set to ``/home``.  
+The ``filesystem_folder`` must be the absolute file path up until your user directory. 
+This will typically be ``/home``.  
 
 ::
 
