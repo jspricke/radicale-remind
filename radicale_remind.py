@@ -16,27 +16,22 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Remind, Abook, Taskwarrior Storage backend for Radicale."""
 
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from colorsys import hsv_to_rgb
 from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
-from typing import Callable, ContextManager, overload
+from typing import ContextManager, overload
 from zoneinfo import ZoneInfo
 
 from abook import Abook
-
 from icstask import IcsTask
-
-from radicale import config
+from radicale import config, types
 from radicale import item as radicale_item
-from radicale import types
 from radicale.item import Item
 from radicale.log import logger
 from radicale.pathutils import sanitize_path
 from radicale.storage import BaseCollection, BaseStorage
-
 from remind import Remind
-
 from vobject.base import Component
 
 
@@ -258,7 +253,7 @@ class Storage(BaseStorage):
             self, path: str, depth: str = "0",
             child_context_manager:
             Callable[[str, str | None ], ContextManager[None]] | None = None,
-            user_groups: set[str] = set([])) -> Iterable[types.CollectionOrItem]:
+            user_groups: set[str] = set()) -> Iterable[types.CollectionOrItem]:
         """Discover a list of collections under the given ``path``.
 
         ``path`` is sanitized.
