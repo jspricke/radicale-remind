@@ -329,7 +329,7 @@ class Storage(BaseStorage):
         )
 
     @types.contextmanager
-    def acquire_lock(self, mode: str, user: str = "") -> Iterator[None]:
+    def acquire_lock(self, mode: str, user: str = "", *args, **kwargs) -> Iterator[None]:
         """Set a context manager to lock the whole storage.
 
         ``mode`` must either be "r" for shared access or "w" for exclusive
