@@ -53,6 +53,9 @@ Config
   [server]
   hosts = 0.0.0.0:5232
 
+  [auth]
+  type = none
+
   [rights]
   type = from_file
   file = /home/user/.config/radicale/rights
