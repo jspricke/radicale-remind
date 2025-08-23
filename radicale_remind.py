@@ -16,11 +16,11 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """Remind, Abook, Taskwarrior Storage backend for Radicale."""
 
-from collections.abc import Callable, Iterable, Iterator, Mapping
 from colorsys import hsv_to_rgb
 from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
-from typing import ContextManager, overload
+from typing import (Callable, ContextManager, Iterable, Iterator,
+                    Mapping, Optional, Set, Tuple, Union, overload)
 from zoneinfo import ZoneInfo
 
 from abook import Abook
@@ -94,8 +94,7 @@ class Collection(BaseCollection):
         return self._path
 
     # fmt: off
-    def get_multi(self, hrefs: Iterable[str]
-                  ) -> Iterable[tuple[str, None | radicale_item.Item]]:
+    def get_multi(self, hrefs: Iterable[str]) -> Iterable[Tuple[str, Optional["radicale_item.Item"]]]:
         """Fetch multiple items.
 
         It's not required to return the requested items in the correct order.
@@ -112,7 +111,7 @@ class Collection(BaseCollection):
             for x in self.adapter.to_vobjects(self.filename, hrefs)
         )
 
-    def get_all(self) -> Iterable[radicale_item.Item]:
+    def get_all(self) -> Iterable["radicale_item.Item"]:
         """Fetch all items."""
         return (self._convert(x) for x in self.adapter.to_vobjects(self.filename))
 
@@ -140,25 +139,30 @@ class Collection(BaseCollection):
         return uid in self.adapter.get_uids()
 
     # fmt: off
-    def upload(self, href: str, item: radicale_item.Item) -> (
-            radicale_item.Item):
-        """Upload a new or replace an existing item."""
+    def upload(self, href: str, item: "radicale_item.Item") -> (
+            Tuple)["radicale_item.Item", Optional["radicale_item.Item"]]:
+        """Upload a new or replace an existing item.
+
+        Return the uploaded item and the old item if it was replaced.
+        """
     # fmt: on
         href = Collection.uid_cache.get(href, href)
         if href in self.adapter.get_uids(self.filename):
+            old_item = self._get(href)
             uid = self.adapter.replace_vobject(href, item.vobject_item, self.filename)
         else:
+            old_item = None
             uid = self.adapter.append_vobject(item.vobject_item, self.filename)
             Collection.uid_cache[href] = uid
         try:
-            return self._get(uid)
+            return self._get(uid), old_item
         except KeyError as error:
             logger.warning(
                 "Unable to find uploaded event, maybe increase remind_lookahead_month"
             )
             raise ValueError(f"Failed to store item {href} in collection {self.path}: {error}") from error
 
-    def delete(self, href: None | str = None) -> None:
+    def delete(self, href: Optional[str] = None) -> None:
         """Delete an item.
 
         When ``href`` is ``None``, delete the collection.
@@ -184,8 +188,8 @@ class Collection(BaseCollection):
     @overload
     def get_meta(self, key: str) -> None | str: ...
 
-    def get_meta(self, key: None | str = None
-                 ) -> Mapping[str, str] | str | None:
+    def get_meta(self, key: Optional[str] = None
+                 ) -> Union[Mapping[str, str], Optional[str]]:
         """Get metadata value for collection.
 
         Return the value of the property ``key``. If ``key`` is ``None`` return
@@ -251,9 +255,8 @@ class Storage(BaseStorage):
     # fmt: off
     def discover(
             self, path: str, depth: str = "0",
-            child_context_manager:
-            Callable[[str, str | None ], ContextManager[None]] | None = None,
-            user_groups: set[str] = set()) -> Iterable[types.CollectionOrItem]:
+            child_context_manager: Optional[Callable[[str, Optional[str]], ContextManager[None]]] = None,
+            user_groups: Set[str] = set([])) -> Iterable["types.CollectionOrItem"]:
         """Discover a list of collections under the given ``path``.
 
         ``path`` is sanitized.
@@ -305,7 +308,7 @@ class Storage(BaseStorage):
             return
 
     # fmt: off
-    def move(self, item: radicale_item.Item, to_collection: BaseCollection,
+    def move(self, item: "radicale_item.Item", to_collection: BaseCollection,
              to_href: str) -> None:
         """Move an object.
 
