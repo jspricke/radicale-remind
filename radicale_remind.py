@@ -21,7 +21,6 @@ from os.path import basename, dirname, expanduser, join
 from time import gmtime, strftime
 from typing import (Callable, ContextManager, Iterable, Iterator,
                     Mapping, Optional, Set, Tuple, Union, overload)
-from zoneinfo import ZoneInfo
 
 from abook import Abook
 from icstask import IcsTask
@@ -233,7 +232,7 @@ class Storage(BaseStorage):
         if "remind_file" in configuration.options("storage"):
             zone = None
             if "remind_timezone" in configuration.options("storage"):
-                zone = ZoneInfo(configuration.get("storage", "remind_timezone"))
+                zone = configuration.get("storage", "remind_timezone")
             month = 15
             if "remind_lookahead_month" in configuration.options("storage"):
                 month = configuration.get("storage", "remind_lookahead_month")
